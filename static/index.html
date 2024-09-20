@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APK Decompiler</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        #consoleOutput {
+            height: 200px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 20px;
+        }
+
+        #fileList {
+            margin-top: 20px;
+        }
+
+        #fileList div {
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        #fileList div:hover {
+            background-color: #f0f0f0;
+        }
+
+        #fileContent {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+<h1>APK Decompiler</h1>
+<input type="file" id="fileInput" accept=".apk,.xapk" onchange="uploadFile()">
+<button onclick="uploadFile()">Upload and Decompile</button>
+<div id="consoleOutput"></div>
+<div id="fileList"></div>
+<pre id="fileContent"></pre>
+
+<script>
+    const output = createLog({data: 'Connecting to server...'});
+
+    const socket = io({
+        transports: ['websocket'],
+        upgrade: false
+    });
+
+    socket.on('connect', () => {
+        console.log('Connected to server');
+    });
+
+    socket.on('console_output', (data) => logToConsole(data.data));
+
+    socket.on('decompile_complete', (data) => {
+        if (data.status === 'success') {
+            logToConsole('Decompilation completed');
+        } else {
+            logToConsole('Decompilation failed');
+        }
+
+        listFiles();
+    });
+
+
+    function createLog(data) {
+        const consoleOutput = document.getElementById('consoleOutput');
+        consoleOutput.innerHTML += data.data + '<br>';
+        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        return consoleOutput;
+    }
+
+
+    function logToConsole(data) {
+        output.innerHTML += data + '<br>';
+        output.scrollTop = consoleOutput.scrollHeight
+    }
+
+    async function uploadFile() {
+        const fileInput = document.getElementById('fileInput');
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        try {
+            await axios.post('/upload', formData);
+            document.getElementById('consoleOutput').innerHTML = 'Decompilation started...<br>';
+        } catch (error) {
+            logToConsole('Error: ' + error.response.data);
+        }
+    }
+
+    async function listFiles() {
+        try {
+            const response = await axios.get('/files');
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+            response.data.files.forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.textContent = file;
+                fileItem.onclick = () => getFileContent(file);
+                fileList.appendChild(fileItem);
+            });
+        } catch (error) {
+            logToConsole('Error:', error);
+        }
+    }
+
+    async function getFileContent(filepath) {
+        try {
+            const response = await axios.get(`/file/${encodeURIComponent(filepath)}`, {responseType: 'text'});
+            const fileContent = document.getElementById('fileContent');
+            fileContent.textContent = response.data;
+        } catch (error) {
+            logToConsole('Error:', error);
+            if (error.response && error.response.status === 404) {
+                logToConsole(`File not found: ${error.response.data.path}`);
+            } else {
+                logToConsole('An error occurred while fetching the file content');
+            }
+        }
+    }
+
+    listFiles();
+</script>
+</body>
+</html>
