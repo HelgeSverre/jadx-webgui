@@ -3,13 +3,16 @@ import subprocess
 import logging
 from flask import Flask, request, jsonify, send_file, send_from_directory
 from werkzeug.utils import secure_filename
-from flask_socketio import SocketIO, emit
+from flask_cors import CORS
+from flask_socketio import SocketIO
+import shutil
 
 logging.basicConfig(level=logging.INFO)
 
-app = Flask(__name__, static_folder='static')
-socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
+app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
+socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
 
 UPLOAD_FOLDER = '/tmp/uploads'
 DECOMPILE_FOLDER = '/tmp/decompiled'
@@ -17,9 +20,9 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(DECOMPILE_FOLDER, exist_ok=True)
 
 
-@app.route('/')
-def index():
-    return send_from_directory(app.static_folder, 'index.html')
+@app.route('/', methods=['GET'])
+def ping():
+    return jsonify({"error": "pong"}), 200
 
 
 @app.route('/upload', methods=['POST'])
@@ -40,7 +43,7 @@ def upload_file():
 def decompile_apk(filepath):
     output_dir = os.path.join(DECOMPILE_FOLDER, os.path.splitext(os.path.basename(filepath))[0])
     try:
-        process = subprocess.Popen(['jadx', '-d', output_dir, filepath],
+        process = subprocess.Popen(['jadx', '-v', '-d', output_dir, filepath],
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT,
                                    universal_newlines=True)
@@ -74,6 +77,20 @@ def list_files():
             relative_path = os.path.relpath(os.path.join(root, filename), DECOMPILE_FOLDER)
             files.append(relative_path)
     return jsonify({"files": files})
+
+
+@app.route('/wipe', methods=['DELETE'])
+def wipe_files():
+    folders = []
+    for item in os.listdir(DECOMPILE_FOLDER):
+        item_path = os.path.join(DECOMPILE_FOLDER, item)
+        if os.path.isdir(item_path):
+            folders.append(item)
+            shutil.rmtree(item_path)
+        elif os.path.isfile(item_path):
+            os.remove(item_path)
+
+    return jsonify({"message": "Decompiled files wiped", "folders": folders})
 
 
 @app.route('/file/<path:filepath>', methods=['GET'])

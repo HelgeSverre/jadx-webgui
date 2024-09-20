@@ -19,11 +19,11 @@ COPY requirements.txt .
 RUN pip3 install -r requirements.txt
 
 COPY app.py .
-COPY static/index.html static/
 
 # Create necessary directories
 RUN mkdir -p /tmp/uploads /tmp/decompiled
 
-EXPOSE 5000
 
-CMD ["python3", "app.py"]
+EXPOSE 8080
+
+CMD ["python3", "app.py", "--host", "0.0.0.0"]
