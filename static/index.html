@@ -6,52 +6,36 @@
     <title>APK Decompiler</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-        }
-
-        #consoleOutput {
-            height: 200px;
-            overflow-y: scroll;
-            border: 1px solid #ccc;
-            padding: 10px;
-            margin-top: 20px;
-        }
-
-        #fileList {
-            margin-top: 20px;
-        }
-
-        #fileList div {
-            cursor: pointer;
-            padding: 5px;
-        }
-
-        #fileList div:hover {
-            background-color: #f0f0f0;
-        }
-
-        #fileContent {
-            margin-top: 20px;
-            border: 1px solid #ccc;
-            padding: 10px;
-            white-space: pre-wrap;
-        }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-<h1>APK Decompiler</h1>
-<input type="file" id="fileInput" accept=".apk,.xapk" onchange="uploadFile()">
-<button onclick="uploadFile()">Upload and Decompile</button>
-<div id="consoleOutput"></div>
-<div id="fileList"></div>
-<pre id="fileContent"></pre>
+<body class="flex flex-col h-screen bg-gray-100 overscroll-y-contain">
+<header class="bg-blue-600 text-white p-4">
+    <h1 class="text-sm font-bold">APK Decompiler</h1>
+</header>
+
+<div class="flex flex-1 overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-200 p-4 overflow-y-auto">
+        <input type="file" id="fileInput" accept=".apk,.xapk" class="mb-4">
+        <button onclick="uploadFile()" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Upload and
+            Decompile
+        </button>
+        <div id="fileList" class="mt-4 whitespace-nowrap"></div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="flex-1 p-4 overflow-auto">
+        <pre id="fileContent" class="bg-white p-4 rounded shadow"></pre>
+    </main>
+</div>
+
+<!-- Logger -->
+<footer class="h-48 bg-gray-800 text-white p-4 overflow-y-auto">
+    <div id="consoleOutput"></div>
+</footer>
 
 <script>
-    const output = createLog({data: 'Connecting to server...'});
+    const output = document.getElementById('consoleOutput');
 
     const socket = io({
         transports: ['websocket'],
@@ -60,32 +44,23 @@
 
     socket.on('connect', () => {
         console.log('Connected to server');
+        logToConsole('Connected to server');
     });
 
     socket.on('console_output', (data) => logToConsole(data.data));
 
     socket.on('decompile_complete', (data) => {
         if (data.status === 'success') {
-            logToConsole('Decompilation completed');
+            logToConsole('Decompilation completed successfully');
         } else {
             logToConsole('Decompilation failed');
         }
-
         listFiles();
     });
 
-
-    function createLog(data) {
-        const consoleOutput = document.getElementById('consoleOutput');
-        consoleOutput.innerHTML += data.data + '<br>';
-        consoleOutput.scrollTop = consoleOutput.scrollHeight;
-        return consoleOutput;
-    }
-
-
     function logToConsole(data) {
         output.innerHTML += data + '<br>';
-        output.scrollTop = consoleOutput.scrollHeight
+        output.scrollTop = output.scrollHeight;
     }
 
     async function uploadFile() {
@@ -95,7 +70,7 @@
 
         try {
             await axios.post('/upload', formData);
-            document.getElementById('consoleOutput').innerHTML = 'Decompilation started...<br>';
+            logToConsole('Decompilation started...');
         } catch (error) {
             logToConsole('Error: ' + error.response.data);
         }
@@ -109,11 +84,12 @@
             response.data.files.forEach(file => {
                 const fileItem = document.createElement('div');
                 fileItem.textContent = file;
+                fileItem.className = 'cursor-pointer hover:bg-gray-300 p-1 rounded';
                 fileItem.onclick = () => getFileContent(file);
                 fileList.appendChild(fileItem);
             });
         } catch (error) {
-            logToConsole('Error:', error);
+            logToConsole('Error: ' + error);
         }
     }
 
@@ -123,7 +99,6 @@
             const fileContent = document.getElementById('fileContent');
             fileContent.textContent = response.data;
         } catch (error) {
-            logToConsole('Error:', error);
             if (error.response && error.response.status === 404) {
                 logToConsole(`File not found: ${error.response.data.path}`);
             } else {
