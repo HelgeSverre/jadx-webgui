@@ -2,13 +2,14 @@
   import { onDestroy, onMount } from "svelte";
   import io from "socket.io-client";
   import axios from "axios";
+  import { search } from "./store.js";
   import FileList from "./components/FileList.svelte";
   import FileViewer from "./components/FileViewer.svelte";
   import Console from "./components/Console.svelte";
+  import { Code } from "lucide-svelte";
 
   const API_URL = "http://localhost:8080";
 
-  let search = "";
   let files = [];
   let selectedFile = "";
   let selectedFileContent = "";
@@ -52,7 +53,13 @@
 
     socket.on("console_output", (data) => {
       console.log("Received console output:", data);
-      addLog(data.data, "info");
+
+      let type = null;
+      try {
+        type = data.data.split(" - ")[0].toLowerCase();
+      } catch (error) {}
+
+      addLog(data.data, type);
     });
 
     socket.on("decompile_complete", (data) => {
@@ -150,47 +157,44 @@
     }
   }
 
-  $: filteredFiles = files.filter((file) => file.toLowerCase().includes(search.toLowerCase()));
+  $: filteredFiles = files.filter((file) => file.toLowerCase().includes($search.toLowerCase()));
 </script>
 
 <main class="flex h-screen flex-col bg-gray-100">
   <header class="flex flex-row items-center justify-between bg-blue-900 p-2 leading-none text-white">
-    <h1 class="font-mono text-sm">APK Decompiler</h1>
+    <h1 class="inline-flex items-center gap-1 font-mono text-sm">
+      <Code size="16" />
+      <span class="inline-block">APK Decompiler</span>
+    </h1>
 
-    <div class="ml-auto">
-      <button class="rounded bg-white px-2 py-0.5 text-sm text-black hover:bg-opacity-75" on:click={reset}>
-        Reset
+    <div class="flex flex-row items-center justify-end gap-2">
+      <button
+        class="inline-block h-6 cursor-pointer rounded px-2 py-0.5 text-sm font-medium text-blue-100 focus-within:bg-white focus-within:bg-opacity-25 hover:bg-white hover:bg-opacity-25 focus:outline-0"
+        on:click={reset}
+      >
+        Reset environment
       </button>
 
       <label
         for="file-selector"
-        class="inline-block cursor-pointer rounded px-2 py-0.5 text-sm hover:bg-white hover:bg-opacity-25"
+        class="inline-block h-6 cursor-pointer rounded px-2 py-0.5 text-sm font-medium text-blue-100 focus-within:bg-white focus-within:bg-opacity-25 hover:bg-white hover:bg-opacity-25"
       >
         Upload file
+        <input id="file-selector" type="file" accept=".apk,.xapk" on:change={uploadFile} class="sr-only" />
       </label>
-      <input id="file-selector" type="file" accept=".apk,.xapk" on:change={uploadFile} class="sr-only" />
     </div>
   </header>
 
-  <div class="flex flex-1 overflow-hidden">
+  <main class="flex flex-1 overflow-hidden">
     <aside class="w-64 bg-gray-200">
-      <input type="search" bind:value={search} placeholder="Search files..." class="w-full p-2 text-sm" />
+      <input type="search" bind:value={$search} placeholder="Search files..." class="w-full p-2 text-sm" />
       <FileList files={filteredFiles} on:selectFile={(event) => getFileContent(event.detail)} />
     </aside>
 
-    <div class="flex-1 overflow-auto p-4">
+    <div class="flex w-full flex-1 overflow-auto">
       <FileViewer content={selectedFileContent} file={selectedFile} />
     </div>
-  </div>
+  </main>
 
-  <footer>
-    <Console logs={logs} />
-  </footer>
+  <Console logs={logs} />
 </main>
-
-<style>
-  :global(body) {
-    margin: 0;
-    font-family: Arial, sans-serif;
-  }
-</style>

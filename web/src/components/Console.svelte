@@ -3,7 +3,8 @@
   import classNames from "classnames";
 
   export let logs = [];
-  let element;
+
+  let console;
   let shouldScroll = true;
 
   onMount(() => {
@@ -17,13 +18,13 @@
   });
 
   function scrollToBottom() {
-    if (element) {
-      element.scrollTop = element.scrollHeight;
+    if (console) {
+      console.scrollTop = console.scrollHeight;
     }
   }
 
   function handleScroll() {
-    const { scrollTop, scrollHeight, clientHeight } = element;
+    const { scrollTop, scrollHeight, clientHeight } = console;
     shouldScroll = scrollTop + clientHeight >= scrollHeight - 5;
   }
 
@@ -45,23 +46,23 @@
   }
 </script>
 
-<div
-  bind:this={element}
-  on:scroll={handleScroll}
-  class="h-48 overflow-y-auto bg-gray-800 p-4 font-mono text-sm text-white"
->
-  {#each logs as log}
-    <div
-      class={classNames("mb-0.5 block text-xs", {
-        "font-bold text-red-500": log.type === "error",
-        "text-yellow-500": log.type === "warn",
-        "bg-green-950 text-green-400": log.type === "success",
-        "text-gray-100": log.type === "info",
-        "text-gray-400": log.type === "comment",
-      })}
-    >
-      <span class="mr-1 inline-block tracking-tighter text-gray-400">{formatTimestamp(log.timestamp)}:</span>
-      <span class="inline-block">{log.message}</span>
-    </div>
-  {/each}
-</div>
+<footer bind:this={console} class="h-48 overflow-y-auto bg-gray-800">
+  <div on:scroll={handleScroll} class="m-2 font-mono text-sm text-white">
+    {#each logs as log}
+      <div
+        class={classNames("mb-0.5 block text-xs", {
+          "font-bold text-red-500": log.type === "error",
+          "text-yellow-500": log.type === "warn",
+          "bg-green-950 text-green-400": log.type === "success",
+          "text-gray-100": log.type === "info",
+          "text-gray-400": log.type === "comment",
+          "text-purple-400": log.type === "debug",
+          "text-sky-400": log.type === "info",
+        })}
+      >
+        <span class="mr-1 inline-block tracking-tighter text-gray-400">{formatTimestamp(log.timestamp)}:</span>
+        <span class="inline-block">{log.message}</span>
+      </div>
+    {/each}
+  </div>
+</footer>
