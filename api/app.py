@@ -75,45 +75,6 @@ def decompile_apk(filepath):
     Thread(target=run_decompilation).start()
 
 
-# def decompile_apk(filepath):
-#     output_dir = os.path.join(DECOMPILE_FOLDER, os.path.splitext(os.path.basename(filepath))[0])
-#
-#     def stream_output(p):
-#         for line in iter(p.stdout.readline, b''):
-#             print(line, end='')  # Print to server console
-#             socketio.emit('console_output', {'data': line.strip()}, namespace='/')
-#
-#     try:
-#         process = subprocess.Popen(['jadx', '-d', output_dir, filepath],
-#                                    stdout=subprocess.PIPE,
-#                                    stderr=subprocess.STDOUT,
-#                                    universal_newlines=True,
-#                                    bufsize=1)
-#
-#         # Start a separate thread to stream the output
-#         thread = Thread(target=stream_output, args=(process,))
-#         thread.start()
-#
-#         # Wait for the process to complete
-#         process.wait()
-#         thread.join()
-#
-#         if process.returncode == 0:
-#             socketio.emit('decompile_complete', {'status': 'success'})
-#         else:
-#             socketio.emit('decompile_complete', {'status': 'error'})
-#     except FileNotFoundError:
-#         error_msg = "JADX not found. Please ensure it's installed and in the system PATH."
-#         logging.error(error_msg)
-#         socketio.emit('console_output', {'data': error_msg})
-#         socketio.emit('decompile_complete', {'status': 'error'})
-#     except Exception as e:
-#         error_msg = f"An error occurred: {str(e)}"
-#         logging.error(error_msg)
-#         socketio.emit('console_output', {'data': error_msg})
-#         socketio.emit('decompile_complete', {'status': 'error'})
-
-
 @app.route('/files', methods=['GET'])
 def list_files():
     files = []
