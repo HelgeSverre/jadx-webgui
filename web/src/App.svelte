@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import io from "socket.io-client";
   import axios from "axios";
   import FileList from "./components/FileList.svelte";
@@ -16,34 +16,59 @@
   let socket;
 
   onMount(() => {
+    connectSocket();
+    listFiles();
+  });
+
+  onDestroy(() => {
+    if (socket) socket.disconnect();
+  });
+
+  function connectSocket() {
     socket = io(API_URL, {
       transports: ["websocket"],
       upgrade: false,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      timeout: 5000,
+      autoConnect: true,
     });
 
     socket.on("connect", () => {
-      addLog("[WS] Websocket connection established", "comment");
+      addLog("[WS] WebSocket connection established", "success");
+    });
+
+    socket.on("disconnect", (reason) => {
+      addLog(`[WS] Disconnected: ${reason}`, "warn");
+    });
+
+    socket.onAny((event, ...args) => {
+      console.log(`[WS] Event: ${event}`, args);
+    });
+
+    socket.on("connect_error", (error) => {
+      addLog(`[WS] Connection error: ${error.message}`, "error");
     });
 
     socket.on("console_output", (data) => {
-      console.log(data);
-      addLog(data.data);
+      console.log("Received console output:", data);
+      addLog(data.data, "info");
     });
 
     socket.on("decompile_complete", (data) => {
+      console.log("Decompilation complete:", data);
       if (data.status === "success") {
-        addLog("Decompilation completed successfully");
+        addLog("Decompilation completed successfully", "success");
       } else {
-        addLog("Decompilation failed");
+        addLog("Decompilation failed", "error");
       }
 
       listFiles();
     });
-
-    listFiles();
-  });
+  }
 
   function addLog(message, type = "info") {
+    console.log(`Log: [${type}] ${message}`);
     logs = [...logs, { message, type, timestamp: new Date() }];
   }
 
@@ -51,20 +76,29 @@
     logs = [];
   }
 
-  function reset() {
-    clearLogs();
+  function clearFileSelection() {
     selectedFile = "";
     selectedFileContent = "";
-    files = [];
+  }
 
-    axios.delete(API_URL + "/wipe").then((res) => {
-      if (res.data.folders.length === 0) {
-        addLog("Nothing to wipe", "warn");
-        return;
-      }
+  function reset() {
+    axios
+      .delete(API_URL + "/wipe")
+      .then((res) => {
+        if (res.data.folders.length === 0) {
+          addLog("Nothing to wipe", "warn");
+          return;
+        }
 
-      addLog("Wiped: " + res.data.folders.join(", "), "success");
-    });
+        clearLogs();
+        clearFileSelection();
+        files = [];
+
+        addLog("Wiped: " + res.data.folders.join(", "), "success");
+      })
+      .catch((error) => {
+        addLog("Error: " + error.response.data, "error");
+      });
   }
 
   async function uploadFile(event) {
@@ -74,7 +108,10 @@
     formData.append("file", file);
 
     try {
-      axios.post(API_URL + "/upload", formData);
+      await axios.post(API_URL + "/upload", formData).catch((error) => {
+        addLog("Error: " + error.response.data, "error");
+      });
+
       addLog("Decompilation started...", "info");
     } catch (error) {
       addLog("Error: " + error.response.data, "error");
@@ -87,9 +124,9 @@
       files = response.data.files;
 
       if (files.length === 0) {
-        addLog("No files found");
+        addLog("No files found", "warn");
       } else {
-        addLog("Files list updated");
+        addLog("Files list updated", "info");
       }
     } catch (error) {
       addLog("Error: " + error, "error");
