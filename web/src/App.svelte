@@ -2,18 +2,18 @@
   import { onDestroy, onMount } from "svelte";
   import io from "socket.io-client";
   import axios from "axios";
-  import { search } from "./store.js";
+  import { addLog, clearLogs, logLevels, search } from "./store.js";
   import FileList from "./components/FileList.svelte";
   import FileViewer from "./components/FileViewer.svelte";
   import Console from "./components/Console.svelte";
-  import { Code } from "lucide-svelte";
+  import { Code2 } from "lucide-svelte";
+  import { createFileTree } from "./utils.js";
 
   const API_URL = "http://localhost:8080";
 
   let files = [];
   let selectedFile = "";
   let selectedFileContent = "";
-  let logs = [];
   let socket;
 
   onMount(() => {
@@ -36,30 +36,34 @@
     });
 
     socket.on("connect", () => {
-      addLog("[WS] WebSocket connection established", "success");
+      addLog("WebSocket connection established", "debug");
     });
 
     socket.on("disconnect", (reason) => {
-      addLog(`[WS] Disconnected: ${reason}`, "warn");
-    });
-
-    socket.onAny((event, ...args) => {
-      console.log(`[WS] Event: ${event}`, args);
+      addLog(`Disconnected: ${reason}`, "debug");
     });
 
     socket.on("connect_error", (error) => {
-      addLog(`[WS] Connection error: ${error.message}`, "error");
+      addLog(`Connection error: ${error.message}`, "debug");
     });
 
     socket.on("console_output", (data) => {
-      console.log("Received console output:", data);
+      let type = "info";
+      let msg = data.data;
 
-      let type = null;
       try {
-        type = data.data.split(" - ")[0].toLowerCase();
-      } catch (error) {}
+        const [extractedType, ...rest] = data.data.split("-").map((str) => str.trim());
+        const lowerCaseType = extractedType.toLowerCase();
 
-      addLog(data.data, type);
+        if (logLevels.includes(lowerCaseType)) {
+          type = lowerCaseType;
+          msg = rest.join("-").trim(); // Strip out the log level
+        }
+      } catch (error) {
+        console.error("Error processing console output: ", error);
+      }
+
+      addLog(msg, type);
     });
 
     socket.on("decompile_complete", (data) => {
@@ -74,15 +78,6 @@
     });
   }
 
-  function addLog(message, type = "info") {
-    console.log(`Log: [${type}] ${message}`);
-    logs = [...logs, { message, type, timestamp: new Date() }];
-  }
-
-  function clearLogs() {
-    logs = [];
-  }
-
   function clearFileSelection() {
     selectedFile = "";
     selectedFileContent = "";
@@ -92,16 +87,19 @@
     axios
       .delete(API_URL + "/wipe")
       .then((res) => {
-        if (res.data.folders.length === 0) {
-          addLog("Nothing to wipe", "warn");
-          return;
-        }
-
+        addLog("Resetting environment...", "info");
         clearLogs();
         clearFileSelection();
+        search.update(() => "");
         files = [];
 
-        addLog("Wiped: " + res.data.folders.join(", "), "success");
+        if (res.data.folders.length === 0) {
+          addLog("Project folder was empty, no files to wipe", "comment");
+        } else {
+          addLog("Removed all files and folders", "comment");
+        }
+
+        addLog("Environment reset", "success");
       })
       .catch((error) => {
         addLog("Error: " + error.response.data, "error");
@@ -131,12 +129,12 @@
       files = response.data.files;
 
       if (files.length === 0) {
-        addLog("No files found", "warn");
+        addLog("Project folder is empty", "comment");
       } else {
-        addLog("Files list updated", "info");
+        addLog("Project folder scanned", "info");
       }
     } catch (error) {
-      addLog("Error: " + error, "error");
+      addLog("An error occurred: " + error.response.data, "error");
     }
   }
 
@@ -157,13 +155,14 @@
     }
   }
 
-  $: filteredFiles = files.filter((file) => file.toLowerCase().includes($search.toLowerCase()));
+  $: tree = createFileTree(files.filter((file) => file.toLowerCase().includes($search.toLowerCase())));
+  // $: tree = createFileTree(files);
 </script>
 
-<main class="flex h-screen flex-col bg-gray-100">
+<main class="flex h-screen flex-col bg-gray-100 dark:bg-gray-900">
   <header class="flex flex-row items-center justify-between bg-blue-900 p-2 leading-none text-white">
-    <h1 class="inline-flex items-center gap-1 font-mono text-sm">
-      <Code size="16" />
+    <h1 class="inline-flex items-center gap-2 font-mono text-sm">
+      <Code2 size="16" />
       <span class="inline-block">APK Decompiler</span>
     </h1>
 
@@ -186,9 +185,15 @@
   </header>
 
   <main class="flex flex-1 overflow-hidden">
-    <aside class="w-64 bg-gray-200">
-      <input type="search" bind:value={$search} placeholder="Search files..." class="w-full p-2 text-sm" />
-      <FileList files={filteredFiles} on:selectFile={(event) => getFileContent(event.detail)} />
+    <aside class="w-72 bg-gray-200 dark:bg-gray-950">
+      <input
+        type="search"
+        bind:value={$search}
+        placeholder="Search files..."
+        class="w-full bg-gray-100 p-2 font-mono text-xs dark:bg-gray-900 dark:text-white"
+      />
+
+      <FileList forceExpand={$search.length} tree={tree} on:selectFile={(e) => getFileContent(e.detail)} />
     </aside>
 
     <div class="flex w-full flex-1 overflow-auto">
@@ -196,5 +201,5 @@
     </div>
   </main>
 
-  <Console logs={logs} />
+  <Console />
 </main>

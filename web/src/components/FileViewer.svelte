@@ -5,9 +5,19 @@
   export let file = "";
 
   let softwrap = false;
+
+  // Function to convert raw bytes to a Blob URL
+  function bytesToImageUrl(bytes) {
+    if (bytes) {
+      const blob = new Blob([new Uint8Array(bytes)], { type: "image/png" });
+      return URL.createObjectURL(blob);
+    }
+
+    return null;
+  }
 </script>
 
-<div class="flex h-full flex-col overflow-hidden rounded">
+<div class="flex h-full w-full flex-1 flex-col overflow-hidden">
   {#if file}
     <div
       class="flex h-8 shrink-0 flex-row items-center justify-between gap-3 border-b border-gray-700 bg-gray-800 px-2"
@@ -35,7 +45,8 @@
     <div class="overflow-scroll bg-gray-900">
       {#if file.endsWith(".png")}
         <div class="bg-gray-800 p-2">
-          <img src="data:image/png;base64,{content}" alt="Image preview" />
+          {bytesToImageUrl(content)}
+          <img src={bytesToImageUrl(content)} alt={file} />
         </div>
       {:else if file.endsWith(".json")}
         <pre
