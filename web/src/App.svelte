@@ -56,6 +56,10 @@
           type = lowerCaseType;
           msg = rest.join("-").trim(); // Strip out the log level
         }
+
+        if (data.type) {
+          type = data.type;
+        }
       } catch (error) {
         console.error("Error processing console output: ", error);
       }
@@ -80,7 +84,6 @@
       .then((response) => response.json())
       .then((data) => {
         addLog("Resetting environment...", "info");
-        clearLogs();
         openFile.update(() => null);
         search.update(() => "");
         files = [];
