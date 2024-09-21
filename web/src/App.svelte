@@ -185,12 +185,12 @@
   </header>
 
   <main class="flex flex-1 overflow-hidden">
-    <aside class="w-72 bg-gray-200 dark:bg-gray-950">
+    <aside class="w-72 border-r border-gray-800 bg-gray-200 dark:bg-gray-950">
       <input
         type="search"
         bind:value={$search}
         placeholder="Search files..."
-        class="w-full bg-gray-100 p-2 font-mono text-xs dark:bg-gray-900 dark:text-white"
+        class="w-full border-b border-gray-800 bg-gray-100 p-2 font-mono text-xs dark:bg-gray-900 dark:text-white"
       />
 
       <FileList forceExpand={$search.length} tree={tree} on:selectFile={(e) => getFileContent(e.detail)} />
