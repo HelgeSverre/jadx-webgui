@@ -13,8 +13,8 @@
   {:else}
     <div class="list-disc pl-5">
       {#each uniqueFirebaseKeys as key}
-        <div class="flex flex-row items-stretch justify-start gap-3">
-          <FireChecker apiKey={key} />
+        <div class="flex flex-row items-center justify-start gap-3">
+          <FireChecker apiKey={key.key} />
           <div class="font-mono text-lg text-white">
             {key.key}
           </div>

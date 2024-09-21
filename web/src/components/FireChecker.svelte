@@ -1,6 +1,7 @@
 <script>
   import { Ban, CheckCheck, CircleHelp, Hourglass, Loader2 } from "lucide-svelte";
   import classNames from "classnames";
+  import { addLog } from "../store.js";
 
   export let apiKey = "";
 
@@ -28,15 +29,20 @@
       const data = await response.json();
 
       if (response.ok) {
+        addLog(`Firebase key '${apiKey}' is valid`);
         status = "error";
       } else if (data.error && data.error.message === "API key not valid. Please pass a valid API key.") {
+        addLog(`Firebase key '${apiKey}' is invalid`);
         status = "error";
       } else if (data.error && data.error.message.includes("ADMIN_ONLY_OPERATION")) {
+        addLog(`Firebase key '${apiKey}' is valid, but it requires admin privileges`);
         status = "success";
       } else {
+        addLog(`Firebase key '${apiKey}' is invalid`);
         status = "error";
       }
     } catch (error) {
+      addLog(`Firebase key '${apiKey}' is invalid`);
       status = "error";
     }
   }
