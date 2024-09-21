@@ -163,8 +163,14 @@ def decompile_and_analyze(filepath, analyzers):
                     os.path.splitext(os.path.basename(filepath))[0],
                 )
 
+                socketio.emit(
+                    "project_created", {"project_id": project_id}, namespace="/"
+                )
+
                 # Run analysis
-                console_output("Starting analysis...", type="info")
+                console_output(
+                    f"Starting analysis of project {project_id}", type="info"
+                )
                 run_analysis(output_dir, project_id, analyzers)
                 console_output("Analysis complete.", type="info")
                 socketio.emit("analysis_complete", {"status": "success"}, namespace="/")
