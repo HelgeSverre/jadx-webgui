@@ -107,6 +107,8 @@
         openFile.update(() => null);
         search.update(() => "");
         files = [];
+        firebaseKeys = [];
+        endpoints = [];
 
         project.update(() => null);
 

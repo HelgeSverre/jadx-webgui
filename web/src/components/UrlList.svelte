@@ -23,7 +23,8 @@
     .filter((endpoint) => !ignored.some((ignore) => endpoint.url.includes(ignore)));
 </script>
 
-<div class="flex min-h-0 w-full flex-col overflow-scroll text-white">
+<div class="flex min-h-0 w-full flex-col overflow-scroll text-white p-2">
+  <h2 class="mb-4 text-xl font-bold">URLs</h2>
   {#if endpoints.length === 0}
     <p>No endpoints found.</p>
   {:else}
