@@ -232,9 +232,15 @@
       openFile.update(() => null);
     }
 
-    // command 2 - toggle console visibility
+    // Toggle Console
     if (event.metaKey && event.key === "2") {
       $settings.consoleCollapsed = !$settings.consoleCollapsed;
+      event.preventDefault();
+    }
+
+    // Ctrl + F - Focus search input
+    if (event.ctrlKey && event.key === "f") {
+      document.querySelector("input[type=search]")?.focus();
       event.preventDefault();
     }
   }
@@ -280,7 +286,7 @@
   </header>
 
   <main class="flex flex-1 overflow-hidden">
-    <aside class="bg-zinc-850 h-8 h-full w-72 shrink-0">
+    <aside class="bg-zinc-850 h-full w-72 shrink-0">
       <input
         type="search"
         bind:value={$search}
@@ -321,7 +327,7 @@
           })}
           on:click={() => ($settings.activeTab = "urls")}
         >
-          URL Results
+          Discovered URLs
         </button>
       </div>
       <div class="flex min-h-0 flex-1 bg-zinc-900">
