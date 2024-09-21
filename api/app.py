@@ -45,8 +45,6 @@ def run_url_regex_scan(decompiled_path, project_id):
         for file in files:
             file_path = os.path.join(root, file)
 
-            console_output(f"Scanning file: {file_path}", type="debug")
-
             try:
                 with open(file_path, "r", errors="ignore") as f:
                     content = f.read()
@@ -78,7 +76,8 @@ def run_firebase_scan(decompiled_path, project_id):
                     for key in firebase_keys:
                         found_count += 1
                         add_firebase_key(project_id, key)
-                        console_output(f"Firebase key found: {key}")
+                        console_output(f"[Firebase] Firebase key found: {key}")
+
             except Exception as e:
                 console_output(f"Error processing file {file_path}: {e}", type="error")
 

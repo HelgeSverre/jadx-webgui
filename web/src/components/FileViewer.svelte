@@ -19,7 +19,7 @@
   {@html githubDark}
 </svelte:head>
 
-<div class="flex flex-1 flex-col overflow-hidden bg-[#0D1116]">
+<div class="flex min-h-0 w-full flex-col overflow-scroll bg-[#0D1116]">
   {#if $openFile && $openFile.file && $openFile.content}
     <div
       class="flex h-8 shrink-0 flex-row items-center justify-between gap-3 border-b border-gray-700 bg-gray-800 px-2"
@@ -33,7 +33,7 @@
       </button>
     </div>
 
-    <div class="overflow-scroll bg-gray-900">
+    <div class="h-full min-h-0 flex-1 overflow-auto bg-gray-900">
       {#if $openFile.file.endsWith(".png")}
         <div class="bg-gray-800 p-2">
           {bytesToImageUrl($openFile.content)}
@@ -46,6 +46,6 @@
       {/if}
     </div>
   {:else}
-    <div class="w-full bg-gray-800 p-2 text-left font-mono text-xs text-gray-400">No file selected</div>
+    <div class="h-full w-full flex-1 bg-gray-800 p-2 text-left font-mono text-xs text-gray-400">No file selected</div>
   {/if}
 </div>

@@ -38,3 +38,9 @@ export function addLog(message, type = "info") {
 export function clearLogs() {
   logs.update(() => []);
 }
+
+export const settings = persistentStore("settings", {
+  groupConsoleLogs: false,
+  maxConsoleLogDisplay: 500,
+  codeFontSize: 10,
+});
