@@ -1,7 +1,7 @@
 <script>
   import { onDestroy, onMount } from "svelte";
   import io from "socket.io-client";
-  import { addLog, clearLogs, logLevels, openFile, project, search } from "./store.js";
+  import { addLog, logLevels, openFile, project, search } from "./store.js";
   import FileList from "./components/FileList.svelte";
   import FileViewer from "./components/FileViewer.svelte";
   import Console from "./components/Console.svelte";
@@ -34,6 +34,17 @@
 
     socket.on("connect", () => {
       addLog("WebSocket connection established", "success");
+    });
+
+    socket.on("project_created", (data) => {
+      addLog(`Project created: ${data.project}`, "success");
+      project.update((p) => {
+        return {
+          ...p,
+          pending: false,
+          id: data.project_id,
+        };
+      });
     });
 
     socket.on("disconnect", (reason) => {
@@ -114,6 +125,7 @@
         name: file.name,
         size: file.size,
         type: file.type,
+        pending: true,
       };
     });
 
