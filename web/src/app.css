@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.hljs {
+  font-size: 12px;
+
+  /* Code looks better with subpixel antialiasing */
+  -webkit-font-smoothing: subpixel-antialiased;
+}
