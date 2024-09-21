@@ -1,5 +1,5 @@
 <script>
-  import { Clipboard, Text, WrapText } from "lucide-svelte";
+  import { Clipboard } from "lucide-svelte";
   import { HighlightAuto, LineNumbers } from "svelte-highlight";
   import { openFile } from "../store.js";
   import { githubDark } from "svelte-highlight/styles";
@@ -19,7 +19,7 @@
   {@html githubDark}
 </svelte:head>
 
-<div class="flex h-full w-full flex-1 flex-col overflow-hidden">
+<div class="flex flex-1 flex-col overflow-hidden bg-[#0D1116]">
   {#if $openFile && $openFile.file && $openFile.content}
     <div
       class="flex h-8 shrink-0 flex-row items-center justify-between gap-3 border-b border-gray-700 bg-gray-800 px-2"
