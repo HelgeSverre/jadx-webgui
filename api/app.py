@@ -2,7 +2,7 @@ import eventlet
 
 eventlet.monkey_patch()
 
-import random
+import re
 import os
 import subprocess
 import logging
@@ -11,6 +11,13 @@ from werkzeug.utils import secure_filename
 from flask_cors import CORS
 from flask_socketio import SocketIO
 import shutil
+from database import (
+    add_project,
+    add_endpoint,
+    add_firebase_key,
+    get_project_endpoints,
+    get_project_firebase_keys,
+)
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -25,24 +32,98 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(DECOMPILE_FOLDER, exist_ok=True)
 
 
+# Analysis functions
+def run_url_regex_scan(decompiled_path, project_id):
+    print(f"Running URL regex scan on {decompiled_path}")
+    socketio.emit(
+        "console_output",
+        {"data": "Starting URL regex scan...", type: "info"},
+        namespace="/",
+    )
+    url_pattern = re.compile(
+        r"https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+[/\w\.-]*(?:\?\S+)?"
+    )
+
+    for root, _, files in os.walk(decompiled_path):
+        for file in files:
+            file_path = os.path.join(root, file)
+
+            socketio.emit(
+                "console_output",
+                {"data": "Scanning file: {file_path}", type: "debug"},
+                namespace="/",
+            )
+
+            try:
+                with open(file_path, "r", errors="ignore") as f:
+                    content = f.read()
+                    urls = url_pattern.findall(content)
+                    for url in urls:
+                        add_endpoint(project_id, url, "UNKNOWN", "regex")
+                        socketio.emit(
+                            "console_output",
+                            {"data": f"Regex sweep found URL: {url}"},
+                            namespace="/",
+                        )
+            except Exception as e:
+                print(f"Error processing file {file_path}: {e}")
+
+    socketio.emit("console_output", {"data": "URL regex scan complete."}, namespace="/")
+
+
+def run_firebase_scan(decompiled_path, project_id):
+    print(f"Running Firebase scan on {decompiled_path}")
+    socketio.emit(
+        "console_output", {"data": "Starting Firebase scan..."}, namespace="/"
+    )
+    firebase_pattern = re.compile(r"AIzaSy[0-9A-Za-z_-]{33}")
+
+    for root, _, files in os.walk(decompiled_path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            try:
+                with open(file_path, "r", errors="ignore") as f:
+                    content = f.read()
+                    firebase_keys = firebase_pattern.findall(content)
+                    for key in firebase_keys:
+                        add_firebase_key(project_id, key)
+                        socketio.emit(
+                            "console_output",
+                            {"data": f"Firebase key found: {key}"},
+                            namespace="/",
+                        )
+            except Exception as e:
+                print(f"Error processing file {file_path}: {e}")
+
+    socketio.emit("console_output", {"data": "Firebase scan complete."}, namespace="/")
+
+
+def run_analysis(decompiled_path, project_id, analyzers=None):
+    print(f"Running analysis on {decompiled_path}")
+
+    if analyzers is None or len(analyzers) == 0:
+        analyzers = ["regex", "firebase"]
+
+    print(f"Analyzers: {analyzers}")
+
+    for analyzer in analyzers:
+        if analyzer == "regex":
+            run_url_regex_scan(decompiled_path, project_id)
+        elif analyzer == "firebase":
+            run_firebase_scan(decompiled_path, project_id)
+        else:
+            socketio.emit(
+                "console_output",
+                {"data": f"Unknown analyzer: {analyzer}"},
+                namespace="/",
+            )
+            print(f"Unknown analyzer: {analyzer}")
+
+
+# API Endpoints
 @app.route("/", methods=["GET"])
 def ping():
     return jsonify({"error": "pong"}), 200
-
-
-# def run_jsluice(decompiled_path):
-#     for root, dirs, files in os.walk(decompiled_path):
-#         for file in files:
-#             if file.endswith('.js'):
-#                 file_path = os.path.join(root, file)
-#                 with open(file_path, 'r') as f:
-#                     content = f.read()
-#                     results = jsluice.digest_js(content)
-#                     for endpoint in results['endpoints']:
-#                         url = endpoint['url']
-#                         method = endpoint.get('method', 'UNKNOWN')
-#                         add_endpoint(current_project_id, url, method, 'jsluice')
-#                         socketio.emit('new_endpoint', {'url': url, 'method': method, 'source': 'jsluice'})
 
 
 @app.route("/upload", methods=["POST"])
@@ -56,26 +137,30 @@ def upload_file():
         filename = secure_filename(file.filename)
         filepath = os.path.join(UPLOAD_FOLDER, filename)
         file.save(filepath)
-        socketio.start_background_task(decompile_apk, filepath)
-        return jsonify({"message": "File uploaded and decompilation started"}), 200
+        analyzers = request.form.getlist("analyzers")
+        socketio.start_background_task(decompile_and_analyze, filepath, analyzers)
+        return (
+            jsonify({"message": "File uploaded, decompilation and analysis started"}),
+            200,
+        )
 
 
-def decompile_apk(filepath):
+def decompile_and_analyze(filepath, analyzers):
     output_dir = os.path.join(
         DECOMPILE_FOLDER, os.path.splitext(os.path.basename(filepath))[0]
     )
 
-    def run_decompilation():
+    def run_decompilation_and_analysis():
         try:
             process = subprocess.Popen(
-                ["jadx", "-v", "-d", output_dir, filepath],
+                ["jadx", "-d", output_dir, filepath],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 universal_newlines=True,
             )
 
             for line in process.stdout:
-                print(line, end="")  # Print to server console
+                print(line, end="")
                 socketio.emit("console_output", {"data": line.strip()}, namespace="/")
 
             process.wait()
@@ -84,16 +169,37 @@ def decompile_apk(filepath):
                 socketio.emit(
                     "decompile_complete", {"status": "success"}, namespace="/"
                 )
+
+                # Create a new project in the database
+                project_id = add_project(
+                    f"Analysis_{os.path.basename(filepath)}",
+                    os.path.splitext(os.path.basename(filepath))[0],
+                )
+
+                # Run analysis
+                socketio.emit(
+                    "console_output", {"data": "Starting analysis..."}, namespace="/"
+                )
+                run_analysis(output_dir, project_id, analyzers)
+                socketio.emit(
+                    "console_output", {"data": "Analysis complete."}, namespace="/"
+                )
+                socketio.emit("analysis_complete", {"status": "success"}, namespace="/")
             else:
                 socketio.emit("decompile_complete", {"status": "error"}, namespace="/")
 
+            # Clean up the uploaded file
+            print(f"Removing uploaded file: {filepath}")
+            os.remove(filepath)
+
         except Exception as e:
+
             error_msg = f"An error occurred: {str(e)}"
             logging.error(error_msg)
             socketio.emit("console_output", {"data": error_msg}, namespace="/")
             socketio.emit("decompile_complete", {"status": "error"}, namespace="/")
 
-    socketio.start_background_task(run_decompilation)
+    socketio.start_background_task(run_decompilation_and_analysis)
 
 
 @app.route("/files", methods=["GET"])
@@ -131,31 +237,29 @@ def get_file(filepath):
         return jsonify({"error": "File not found", "path": full_path}), 404
 
 
-def emit_random_message():
-    prefixes = ["ERROR - ", "WARN - ", "INFO - ", "DEBUG - ", "SUCCESS - ", ""]
-    messages = [
-        "Something went wrong!",
-        "Resource not found!",
-        "Unexpected condition!",
-        "Check configurations!",
-        "Critical error encountered!",
-    ]
+@app.route("/endpoints/<int:project_id>", methods=["GET"])
+def get_endpoints(project_id):
+    endpoints = get_project_endpoints(project_id)
+    return jsonify(endpoints)
 
-    while True:
-        prefix = random.choice(prefixes)
-        message = random.choice(messages)
-        socketio.emit("console_output", {"data": prefix + message}, namespace="/")
-        eventlet.sleep(1)
+
+@app.route("/firebase_keys/<int:project_id>", methods=["GET"])
+def get_firebase_keys(project_id):
+    firebase_keys = get_project_firebase_keys(project_id)
+    return jsonify(firebase_keys)
 
 
 if __name__ == "__main__":
     print("🚀 Starting APK Decompiler Backend")
-    # socketio.start_background_task(emit_random_message)
+    print(
+        f"Database path: {os.environ.get('SQLITE_DB_PATH', 'sqlite:///api_discovery.db')}"
+    )
+
     socketio.run(
         app,
         host="0.0.0.0",
         port=os.getenv("PORT", 5000),
         debug=True,
         use_reloader=False,
-        log_output=False,
+        log_output=True,
     )

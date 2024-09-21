@@ -30,7 +30,7 @@
   $: isExpanded = (name) => forceExpand || $expandedNodes.includes(name);
 </script>
 
-<div class="overflow-auto bg-gray-200 dark:bg-gray-900">
+<div>
   {#each Object.entries(tree) as [nodeName, node] (nodeName)}
     <button
       class="block w-full cursor-pointer whitespace-nowrap rounded p-1 text-left text-xs leading-tight hover:bg-gray-300 focus:bg-gray-300 focus:outline-0 dark:hover:bg-gray-800 dark:focus:bg-gray-800"

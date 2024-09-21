@@ -1,19 +1,16 @@
 <script>
   import { onDestroy, onMount } from "svelte";
   import io from "socket.io-client";
-  import axios from "axios";
-  import { addLog, clearLogs, logLevels, search } from "./store.js";
+  import { addLog, clearLogs, logLevels, openFile, project, search } from "./store.js";
   import FileList from "./components/FileList.svelte";
   import FileViewer from "./components/FileViewer.svelte";
   import Console from "./components/Console.svelte";
-  import { Code2 } from "lucide-svelte";
+  import { CodeXml } from "lucide-svelte";
   import { createFileTree } from "./utils.js";
 
   const API_URL = "http://localhost:8080";
 
   let files = [];
-  let selectedFile = "";
-  let selectedFileContent = "";
   let socket;
 
   onMount(() => {
@@ -36,7 +33,7 @@
     });
 
     socket.on("connect", () => {
-      addLog("WebSocket connection established", "debug");
+      addLog("WebSocket connection established", "success");
     });
 
     socket.on("disconnect", (reason) => {
@@ -44,7 +41,7 @@
     });
 
     socket.on("connect_error", (error) => {
-      addLog(`Connection error: ${error.message}`, "debug");
+      addLog(`Connection error: ${error.message}`, "error");
     });
 
     socket.on("console_output", (data) => {
@@ -78,22 +75,19 @@
     });
   }
 
-  function clearFileSelection() {
-    selectedFile = "";
-    selectedFileContent = "";
-  }
-
   function reset() {
-    axios
-      .delete(API_URL + "/wipe")
-      .then((res) => {
+    fetch(API_URL + "/wipe", { method: "DELETE" })
+      .then((response) => response.json())
+      .then((data) => {
         addLog("Resetting environment...", "info");
         clearLogs();
-        clearFileSelection();
+        openFile.update(() => null);
         search.update(() => "");
         files = [];
 
-        if (res.data.folders.length === 0) {
+        project.update(() => null);
+
+        if (data.folders.length === 0) {
           addLog("Project folder was empty, no files to wipe", "comment");
         } else {
           addLog("Removed all files and folders", "comment");
@@ -102,7 +96,7 @@
         addLog("Environment reset", "success");
       })
       .catch((error) => {
-        addLog("Error: " + error.response.data, "error");
+        addLog("Error: " + error.message, "error");
       });
   }
 
@@ -112,21 +106,38 @@
 
     formData.append("file", file);
 
+    project.update(() => {
+      return {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      };
+    });
+
     try {
-      await axios.post(API_URL + "/upload", formData).catch((error) => {
-        addLog("Error: " + error.response.data, "error");
+      const response = await fetch(API_URL + "/upload", {
+        method: "POST",
+        body: formData,
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       addLog("Decompilation started...", "info");
     } catch (error) {
-      addLog("Error: " + error.response.data, "error");
+      addLog("Error: " + error.message, "error");
     }
   }
 
   async function listFiles() {
     try {
-      const response = await axios.get(API_URL + "/files");
-      files = response.data.files;
+      const response = await fetch(API_URL + "/files");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      files = data.files;
 
       if (files.length === 0) {
         addLog("Project folder is empty", "comment");
@@ -134,21 +145,32 @@
         addLog("Project folder scanned", "info");
       }
     } catch (error) {
-      addLog("An error occurred: " + error.response.data, "error");
+      addLog("An error occurred: " + error.message, "error");
     }
   }
 
   async function getFileContent(file) {
     try {
-      const response = await axios.get(API_URL + `/file/${encodeURIComponent(file)}`, {
-        responseType: "text",
+      const response = await fetch(API_URL + `/file/${encodeURIComponent(file)}`);
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error(`File not found: ${file}`);
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const content = await response.text();
+
+      openFile.update(() => {
+        return {
+          file: file,
+          content: content,
+        };
       });
-      selectedFile = file;
-      selectedFileContent = response.data;
+
       addLog(`Fetched file: ${file}`, "info");
     } catch (error) {
-      if (error.response && error.response.status === 404) {
-        addLog(`File not found: ${error.response.data.path}`, "warn");
+      if (error.message.startsWith("File not found:")) {
+        addLog(error.message, "warn");
       } else {
         addLog("An error occurred while fetching the file content", "error");
       }
@@ -156,15 +178,23 @@
   }
 
   $: tree = createFileTree(files.filter((file) => file.toLowerCase().includes($search.toLowerCase())));
-  // $: tree = createFileTree(files);
 </script>
 
 <main class="flex h-screen flex-col bg-gray-100 dark:bg-gray-900">
   <header class="flex flex-row items-center justify-between bg-blue-900 p-2 leading-none text-white">
     <h1 class="inline-flex items-center gap-2 font-mono text-sm">
-      <Code2 size="16" />
+      <CodeXml size="16" />
       <span class="inline-block">APK Decompiler</span>
     </h1>
+
+    {#if $project !== null}
+      <h2 class="bg-black p-1 !font-sans">
+        <span class="font-mono text-xs">Project:</span>
+        <span class="font-mono text-xs text-gray-300">
+          {$project.name}
+        </span>
+      </h2>
+    {/if}
 
     <div class="flex flex-row items-center justify-end gap-2">
       <button
@@ -193,11 +223,13 @@
         class="w-full border-b border-gray-800 bg-gray-100 p-2 font-mono text-xs dark:bg-gray-900 dark:text-white"
       />
 
-      <FileList forceExpand={$search.length} tree={tree} on:selectFile={(e) => getFileContent(e.detail)} />
+      <div class="flex h-full flex-1 flex-col overflow-scroll bg-gray-200 pb-12 dark:bg-gray-900">
+        <FileList forceExpand={$search.length} tree={tree} on:selectFile={(e) => getFileContent(e.detail)} />
+      </div>
     </aside>
 
     <div class="flex w-full flex-1 overflow-auto">
-      <FileViewer content={selectedFileContent} file={selectedFile} />
+      <FileViewer />
     </div>
   </main>
 

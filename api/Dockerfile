@@ -17,10 +17,13 @@ COPY requirements.txt .
 RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY app.py .
+COPY app.py database.py ./
 
 # Create necessary directories
-RUN mkdir -p /tmp/uploads /tmp/decompiled
+RUN mkdir -p /tmp/uploads /tmp/decompiled /data
+
+# Set environment variable for SQLite database path
+ENV SQLITE_DB_PATH=sqlite:////data/api_discovery.db
 
 # Expose the application's port
 EXPOSE 8080

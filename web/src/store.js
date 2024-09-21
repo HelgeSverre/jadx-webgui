@@ -1,5 +1,8 @@
 import { persistentStore } from "./utils.js";
 
+export const project = persistentStore("project", null);
+
+export const openFile = persistentStore("openFile", null);
 export const search = persistentStore("search", "");
 export const logs = persistentStore("log", []);
 export const expandedNodes = persistentStore("expandedNodes", []);

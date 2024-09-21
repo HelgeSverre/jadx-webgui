@@ -66,7 +66,7 @@
   <div
     bind:this={console}
     on:scroll={handleScroll}
-    class={classNames("w-full font-mono text-sm text-white duration-200 ease-in-out", {
+    class={classNames("w-full py-2 font-mono text-sm text-white duration-200 ease-in-out", {
       "max-h-0 overflow-hidden ": collapsed,
       "max-h-64 min-h-32 overflow-x-hidden overflow-y-scroll text-wrap break-words ": !collapsed,
     })}
