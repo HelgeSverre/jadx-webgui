@@ -2,7 +2,7 @@
   export let firebaseKeys = [];
 </script>
 
-<div class="bg-white p-4 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+<div class="bg-white p-4 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100">
   <h2 class="mb-4 text-xl font-bold">Firebase Keys</h2>
   {#if firebaseKeys.length === 0}
     <p>No Firebase keys found.</p>

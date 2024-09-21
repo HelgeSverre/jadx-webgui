@@ -9,18 +9,16 @@
     <div class="overflow-x-auto">
       <table class="min-w-full table-auto border-collapse">
         <thead>
-          <tr class="bg-gray-200 dark:bg-gray-700">
-            <th class="px-4 py-2 text-left">Method</th>
+          <tr class="bg-zinc-200 dark:bg-zinc-700">
             <th class="px-4 py-2 text-left">URL</th>
             <th class="px-4 py-2 text-left">Source</th>
           </tr>
         </thead>
         <tbody>
           {#each endpoints as endpoint, i}
-            <tr class={i % 2 === 0 ? "bg-gray-100 dark:bg-gray-800" : "bg-white dark:bg-gray-900"}>
-              <td class="border border-gray-300 px-4 py-2 dark:border-gray-700">{endpoint.method}</td>
-              <td class="border border-gray-300 px-4 py-2 dark:border-gray-700">{endpoint.url}</td>
-              <td class="border border-gray-300 px-4 py-2 dark:border-gray-700">{endpoint.source}</td>
+            <tr class={i % 2 === 0 ? "bg-zinc-100 dark:bg-zinc-800" : "bg-white dark:bg-zinc-900"}>
+              <td class="border border-zinc-300 px-4 py-2 dark:border-zinc-700">{endpoint.url}</td>
+              <td class="border border-zinc-300 px-4 py-2 dark:border-zinc-700">{endpoint.source}</td>
             </tr>
           {/each}
         </tbody>

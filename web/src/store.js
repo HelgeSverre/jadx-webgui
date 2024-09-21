@@ -43,4 +43,5 @@ export const settings = persistentStore("settings", {
   groupConsoleLogs: false,
   maxConsoleLogDisplay: 500,
   codeFontSize: 10,
+  currentTab: "file",
 });

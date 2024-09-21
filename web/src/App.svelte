@@ -15,7 +15,6 @@
 
   let files = [];
   let socket;
-  let activeTab = "file";
   let firebaseKeys = [];
   let endpoints = [];
 
@@ -90,7 +89,6 @@
     });
 
     socket.on("decompile_complete", (data) => {
-      console.log("Decompilation complete:", data);
       if (data.status === "success") {
         addLog("Decompilation completed successfully", "success");
       } else {
@@ -246,17 +244,18 @@
 
 <svelte:window on:keydown={handleKeyBindings} />
 
-<main class="flex h-screen flex-col bg-gray-100 dark:bg-gray-900">
-  <header class="flex flex-row items-center justify-between bg-blue-900 p-2 leading-none text-white">
+<main class="flex h-screen flex-col bg-zinc-900">
+  <header class="flex flex-row items-center justify-between gap-4 bg-zinc-800 p-2 text-white">
     <h1 class="inline-flex items-center gap-2 font-mono text-sm">
       <CodeXml size="16" />
       <span class="inline-block">APK Decompiler</span>
     </h1>
 
     {#if $project !== null}
-      <h2 class="bg-black p-1 !font-sans">
-        <span class="font-mono text-xs">Project:</span>
-        <span class="font-mono text-xs text-gray-300">
+      <h2
+        class="mr-auto rounded bg-zinc-700 bg-gradient-to-tr from-gray-700 to-gray-600 px-1.5 py-0.5 font-sans leading-none"
+      >
+        <span class="inline-block font-mono text-xs text-zinc-300">
           {$project.name}
         </span>
       </h2>
@@ -264,7 +263,7 @@
 
     <div class="flex flex-row items-center justify-end gap-2">
       <button
-        class="inline-block h-6 cursor-pointer rounded px-2 py-0.5 text-sm font-medium text-blue-100 focus-within:bg-white focus-within:bg-opacity-25 hover:bg-white hover:bg-opacity-25 focus:outline-0"
+        class="inline-block h-6 cursor-pointer rounded bg-blue-600 px-2 py-0.5 text-sm font-medium text-white hover:bg-blue-500 focus:outline-0"
         on:click={reset}
       >
         Reset environment
@@ -272,7 +271,7 @@
 
       <label
         for="file-selector"
-        class="inline-block h-6 cursor-pointer rounded px-2 py-0.5 text-sm font-medium text-blue-100 focus-within:bg-white focus-within:bg-opacity-25 hover:bg-white hover:bg-opacity-25"
+        class="inline-block h-6 cursor-pointer rounded bg-blue-600 px-2 py-0.5 text-sm font-medium text-white hover:bg-blue-500"
       >
         Upload file
         <input id="file-selector" type="file" accept=".apk,.xapk" on:change={uploadFile} class="sr-only" />
@@ -281,56 +280,56 @@
   </header>
 
   <main class="flex flex-1 overflow-hidden">
-    <aside class="w-72 shrink-0 border-r border-gray-800 bg-gray-200 dark:bg-gray-950">
+    <aside class="bg-zinc-850 h-8 h-full w-72 shrink-0">
       <input
         type="search"
         bind:value={$search}
         placeholder="Search files..."
-        class="w-full border-b border-gray-800 bg-gray-100 p-2 font-mono text-xs dark:bg-gray-900 dark:text-white"
+        class="w-full border-b border-zinc-700 bg-zinc-900 p-2 font-mono text-xs text-white"
       />
 
-      <div class="flex h-full flex-1 flex-col overflow-scroll bg-gray-200 pb-12 dark:bg-gray-900">
+      <div class=" bg-zinc-850 flex h-full flex-1 flex-col overflow-scroll pb-12">
         <FileList forceExpand={$search.length} tree={tree} on:selectFile={(e) => getFileContent(e.detail)} />
       </div>
     </aside>
 
-    <div class="flex w-full flex-1 flex-col">
-      <div class="flex flex-row">
+    <div class="flex w-full flex-1 flex-col pb-px">
+      <div class="flex h-8 flex-row border-b border-zinc-700 bg-zinc-900">
         <button
-          class={classNames("ml-auto block px-2 py-1 text-xs ", {
-            "bg-gray-400 font-mono text-black ": activeTab === "file",
-            "bg-gray-200  text-white dark:bg-gray-700 dark:text-gray-100": activeTab !== "file",
+          class={classNames("ml-auto block p-1 px-2 text-xs", {
+            "bg-zinc-800 text-zinc-300": $settings.activeTab === "file",
+            "bg-zinc-900 text-zinc-500": $settings.activeTab !== "file",
           })}
-          on:click={() => (activeTab = "file")}
+          on:click={() => ($settings.activeTab = "file")}
         >
           File Viewer
         </button>
 
         <button
-          class={classNames("block px-2 py-1 text-xs ", {
-            "bg-gray-400 font-mono text-black ": activeTab === "firebase",
-            "bg-gray-200  text-white dark:bg-gray-700 dark:text-gray-100": activeTab !== "firebase",
+          class={classNames("block p-1 px-2 text-xs", {
+            "bg-zinc-800 text-zinc-300": $settings.activeTab === "firebase",
+            "bg-zinc-900 text-zinc-500": $settings.activeTab !== "firebase",
           })}
-          on:click={() => (activeTab = "firebase")}
+          on:click={() => ($settings.activeTab = "firebase")}
         >
           Firebase Keys
         </button>
         <button
-          class={classNames("block px-2 py-1 text-xs ", {
-            "bg-gray-400 font-mono text-black ": activeTab === "urls",
-            "bg-gray-200  text-white dark:bg-gray-700 dark:text-gray-100": activeTab !== "urls",
+          class={classNames("block p-1 px-2 text-xs", {
+            "bg-zinc-800 text-zinc-300": $settings.activeTab === "urls",
+            "bg-zinc-900 text-zinc-500": $settings.activeTab !== "urls",
           })}
-          on:click={() => (activeTab = "urls")}
+          on:click={() => ($settings.activeTab = "urls")}
         >
           URL Results
         </button>
       </div>
-      <div class="flex min-h-0 flex-1 bg-white dark:bg-gray-900">
-        {#if activeTab === "file"}
+      <div class="flex min-h-0 flex-1 bg-zinc-900">
+        {#if $settings.activeTab === "file"}
           <FileViewer />
-        {:else if activeTab === "firebase"}
+        {:else if $settings.activeTab === "firebase"}
           <FirebaseKeys firebaseKeys={firebaseKeys} />
-        {:else if activeTab === "urls"}
+        {:else if $settings.activeTab === "urls"}
           <UrlList endpoints={endpoints} />
         {/if}
       </div>

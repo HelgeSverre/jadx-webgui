@@ -33,24 +33,24 @@
 <div>
   {#each Object.entries(tree) as [nodeName, node] (nodeName)}
     <button
-      class="block w-full cursor-pointer whitespace-nowrap rounded p-1 text-left text-xs leading-tight hover:bg-gray-300 focus:bg-gray-300 focus:outline-0 dark:hover:bg-gray-800 dark:focus:bg-gray-800"
+      class="block w-full cursor-pointer whitespace-nowrap rounded p-1 text-left text-xs leading-tight hover:bg-zinc-300 focus:bg-zinc-300 focus:outline-0 dark:hover:bg-zinc-800 dark:focus:bg-zinc-800"
       on:click={() => handleNodeClick(nodeName, node)}
     >
       <span class="flex flex-row items-center justify-start gap-2">
         {#if isDirectory(node)}
-          <span class="inline-block text-gray-900 dark:text-gray-100">
+          <span class="inline-block text-zinc-900 dark:text-zinc-100">
             {#if isExpanded(nodeName)}
-              <FolderOpen size="14" class="inline-block fill-gray-800 stroke-gray-400 stroke-2" />
+              <FolderOpen size="14" class="inline-block fill-zinc-800 stroke-zinc-400 stroke-2" />
             {:else}
-              <Folder size="14" class="inline-block fill-gray-800 stroke-gray-400 stroke-2" />
+              <Folder size="14" class="inline-block fill-zinc-800 stroke-zinc-400 stroke-2" />
             {/if}
           </span>
         {:else}
-          <span class="inline-block text-gray-900 dark:text-gray-100">
+          <span class="inline-block text-zinc-900 dark:text-zinc-100">
             <File size="14" class="inline-block" />
           </span>
         {/if}
-        <span class="inline-block text-gray-900 dark:text-gray-300">{nodeName}</span>
+        <span class="inline-block text-zinc-900 dark:text-zinc-300">{nodeName}</span>
       </span>
     </button>
     {#if isDirectory(node) && isExpanded(nodeName)}
