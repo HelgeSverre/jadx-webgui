@@ -66,8 +66,6 @@ yarn format
 yarn dev
 ```
 
-----
-
 ## 🧹 Code Formatting
 
 To format both backend and frontend code:
@@ -82,3 +80,4 @@ yarn --cwd web format
 # One-liner for both
 pipx run black api/app.py && yarn --cwd web format
 ```
+
