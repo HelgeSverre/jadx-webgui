@@ -1,23 +1,48 @@
-# Decompiler Backend API
+# 🌩️ APK Decompiler - In the cloud
 
-Provides an API to decompile APK files via jadx, also streams events to the client via SocketIO.
+This is an experiment on how to stream events from a process running inside a docker container to a frontend to do
+non-trivial and interesting things, like decompiling APKs in the cloud.
+
+- Uses JADX to decompile APKs
+- Python Flask for the backend
+- SocketIO for the communication between the backend and the frontend
+- Svelte and TailwindCSS for the frontend
+
+--- 
+
+## Setting up the project
+
+### Backend
 
 ```shell
+# Change directory
+cd api
+
+# Format the code
+pipx run black app.py
+
 # Build
 docker build -t backend .
 
 # Run 
 docker run -p 8080:5000 -v $(pwd)/uploads:/tmp/uploads -v $(pwd)/decompiled:/tmp/decompiled backend
-```
 
-### One-liner
-
-```shell
+# One-liner
 docker build -t backend . && docker run -p 8080:5000 -v $(pwd)/uploads:/tmp/uploads -v $(pwd)/decompiled:/tmp/decompiled backend
 ```
 
-## Format the code
+### Frontend
 
 ```shell
-pipx run black app.py
+# Change directory
+cd frontend
+
+# Install dependencies
+yarn install
+
+# Format the code
+yarn format
+
+# Run
+yarn dev
 ```
