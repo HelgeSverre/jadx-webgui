@@ -1,16 +1,19 @@
-# Build stage
-FROM node:22-alpine as build-stage
+ARG NODE_VERSION=20
+
+FROM node:${NODE_VERSION}-alpine AS build
 WORKDIR /app
-COPY package*.json ./
-RUN yarn install
+
 COPY . .
-RUN yarn run build
 
-# Production stage
-FROM nginx:stable-alpine as production-stage
-COPY --from=build-stage /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/nginx.conf
+RUN rm -rf node_modules dist .env
 
-EXPOSE 80
+RUN yarn install
 
-CMD ["nginx", "-g", "daemon off;"]
+RUN yarn  build
+
+FROM node:${NODE_VERSION}-alpine AS production
+RUN yarn global add serve
+WORKDIR /app
+COPY --from=build /app/dist ./dist
+EXPOSE 3000
+CMD ["serve", "-s", "dist", "-l", "3000"]

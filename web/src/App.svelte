@@ -11,7 +11,7 @@
   import UrlList from "./components/UrlList.svelte";
   import classNames from "classnames";
 
-  const API_URL = "http://localhost:8080";
+  const API_URL = "http://localhost:3000";
 
   let files = [];
   let socket;

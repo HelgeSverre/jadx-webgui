@@ -5,11 +5,11 @@ services:
       context: ./api
       dockerfile: Dockerfile
     ports:
-      - "8081:5000"
+      - "3000:5000"
     volumes:
       - ./api:/app
-      - ./uploads:/tmp/uploads
-      - ./decompiled:/tmp/decompiled
+      - ./api/uploads:/tmp/uploads
+      - ./api/decompiled:/tmp/decompiled
     environment:
       - FLASK_ENV=development
       - FLASK_DEBUG=1
