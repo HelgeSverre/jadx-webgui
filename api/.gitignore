@@ -1,0 +1,11 @@
+# Python stuff
+venv/
+*.pyc
+
+## Will be created automatically
+decompiled
+uploads
+
+# Editor stuff
+.idea/
+.vscode/

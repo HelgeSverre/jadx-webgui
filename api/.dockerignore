@@ -1,4 +1,9 @@
-venv/
-.git/
 .env
 .idea
+
+# Python stuff
+venv/
+
+# Will be created automatically
+uploads/
+decompiled/

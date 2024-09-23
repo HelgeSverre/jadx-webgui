@@ -1,18 +1,30 @@
-# 🌩️ APK Decompiler - In the cloud
+# 🌩️ APK Decompiler - In the Cloud
 
-This is an experiment on how to stream events from a process running inside a docker container to a frontend to do
-non-trivial and interesting things, like decompiling APKs in the cloud.
+An experimental project demonstrating real-time event streaming from a Docker container to a frontend, showcasing
+non-trivial operations like cloud-based APK decompilation.
 
-- Uses JADX to decompile APKs
-- Python Flask for the backend
-- SocketIO for the communication between the backend and the frontend
-- Svelte and TailwindCSS for the frontend
+## 🚀 Features
 
---- 
+- Uses JADX for APK decompilation
+- Python Flask backend
+- SocketIO for real-time backend-frontend communication
+- Svelte and TailwindCSS frontend
 
-## Setting up the project
+## 🛠️ Setup and Installation
 
-### Backend 
+### Quick Start with Docker Compose
+
+```shell
+# Build and run
+docker compose up --build -d
+
+# Tear down
+docker compose down
+```
+
+Now open your browser and go to `http://localhost:8080` to see the app in action.
+
+### Backend
 
 ```shell
 # Change directory
@@ -42,7 +54,7 @@ docker run -p 3000:3000 decompiler-frontend
 
 ```shell
 # Change directory
-cd frontend
+cd web
 
 # Install dependencies
 yarn install
@@ -52,4 +64,21 @@ yarn format
 
 # Run
 yarn dev
+```
+
+----
+
+## 🧹 Code Formatting
+
+To format both backend and frontend code:
+
+```shell
+# Format backend
+pipx run black api/app.py
+
+# Format frontend
+yarn --cwd web format
+
+# One-liner for both
+pipx run black api/app.py && yarn --cwd web format
 ```
