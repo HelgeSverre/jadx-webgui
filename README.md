@@ -118,7 +118,20 @@ pipx run black api/app.py && yarn --cwd web format
 
 ## 📝 Notes
 
-This project is an experiment to demonstrate how to stream output from a backend process to the frontend in real-time
+This project is primarily an experiment to see how to stream output from a backend process to the frontend in real-time
 using sockets. It serves as a practical example of handling complex tasks within a Dockerized environment and streaming
-their output, rather than focusing solely on APK decompilation. The tech stack was selected to explore and learn Docker
-and Flask.
+their output, rather than focusing solely on the APK decompilation.
+
+## ⚠️ Disclaimer
+
+> This project is provided for educational and research purposes only. The authors and contributors are not responsible
+> for any misuse or damage that may result from using this tool. Users should ensure they have the right to decompile
+> and
+> analyze any APK files they process with this tool.
+>
+> Remember that decompiling applications without permission may violate terms of service, copyright laws, or other legal
+> agreements. Always respect intellectual property rights and use this tool responsibly and ethically.
+>
+> By using this software, you agree to these terms and acknowledge that you use it at your own risk.
+
+You know the drill.
