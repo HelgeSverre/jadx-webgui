@@ -1,59 +1,94 @@
-# 🌩️ APK Decompiler - In the Cloud
+# 🌩️ APK Decompiler - In the *Cloud* 😱
 
-An experimental project demonstrating real-time event streaming from a Docker container to a frontend, showcasing
-non-trivial operations like cloud-based APK decompilation.
+## ✨ Overview
+
+This project demonstrates real-time output streaming from a backend process to a frontend using SocketIO and Python.
+It uses [JADX](https://github.com/skylot/jadx) to decompile an uploaded APK file, streaming the output to the frontend
+in real-time. Additional features
+include browsing decompiled files and scanning for URLs and Firebase keys.
+
+The project serves as a testbed for ideas, exploring how to build upon this concept. It's not intended for production
+use but as a learning tool for working with websockets, Docker, and Flask, and building tools for APK analysis.
+
+Feel free to fork and play around with it.
 
 ## 🚀 Features
 
-- Uses JADX for APK decompilation
-- Python Flask backend
-- SocketIO for real-time backend-frontend communication
-- Svelte and TailwindCSS frontend
+- **Real-Time Output Streaming**: Uses SocketIO to stream live output from the backend process (JADX) to the frontend,
+  providing immediate feedback.
+- **Wrapping a Complex Process**: Demonstrates how to handle and stream output from a non-trivial task like APK
+  decompilation.
+- **Dockerized Environment**: Both backend and frontend are containerized using Docker, making it easy to build and run
+  the application.
+- **Tech Stack**:
+    - **Backend**: Flask (Python) for the API, with SocketIO for real-time communication.
+    - **Frontend**: Svelte with TailwindCSS for building a responsive user interface.
 
 ## 🛠️ Setup and Installation
 
-### Quick Start with Docker Compose
+### Clone the Repository
+
+Clone the repository to your local machine:
 
 ```shell
-# Build and run
+git clone git@github.com:HelgeSverre/jadx-webgui.git
+cd jadx-webgui
+```
+
+### Quick Start with Docker Compose
+
+To build and run the application using Docker Compose:
+
+```shell
+# Build and run the containers
 docker compose up --build -d
 
-# Tear down
+# Stop and remove containers
 docker compose down
 ```
 
-Now open your browser and go to `http://localhost:8080` to see the app in action.
+Access the application at `http://localhost:8080`.
 
-### Backend
+### Backend Setup
+
+To build and run the backend separately:
 
 ```shell
-# Change directory
+# Navigate to the API directory
 cd api
 
-# Format the code
+# Format the Python code
 pipx run black app.py
 
-# Build
+# Build the Docker image
 docker build -t decompiler-backend .
 
-# Run 
-docker run -p 8080:5000 -v $(pwd)/uploads:/tmp/uploads -v $(pwd)/decompiled:/tmp/decompiled decompiler-backend
+# Run the Docker container
+docker run -p 8080:5000 \
+  -v $(pwd)/uploads:/tmp/uploads \
+  -v $(pwd)/decompiled:/tmp/decompiled \
+  decompiler-backend
 
-# One-liner
+# Or as a one-liner
 docker build -t decompiler-backend . && docker run -p 8080:5000 -v $(pwd)/uploads:/tmp/uploads -v $(pwd)/decompiled:/tmp/decompiled decompiler-backend
 ```
 
-### Frontend (Docker)  🐳
+### Frontend Setup
+
+#### Using Docker 🐳
 
 ```shell
+# Build the Docker image
 docker build -t decompiler-frontend .
+
+# Run the Docker container
 docker run -p 3000:3000 decompiler-frontend
 ```
 
-### Frontend (Without Docker) 🚀
+#### Without Docker 🚀
 
 ```shell
-# Change directory
+# Navigate to the web directory
 cd web
 
 # Install dependencies
@@ -62,22 +97,28 @@ yarn install
 # Format the code
 yarn format
 
-# Run
+# Run the development server
 yarn dev
 ```
 
 ## 🧹 Code Formatting
 
-To format both backend and frontend code:
+To maintain code consistency:
 
 ```shell
-# Format backend
+# Format backend Python code
 pipx run black api/app.py
 
-# Format frontend
+# Format frontend code
 yarn --cwd web format
 
 # One-liner for both
 pipx run black api/app.py && yarn --cwd web format
 ```
 
+## 📝 Notes
+
+This project is an experiment to demonstrate how to stream output from a backend process to the frontend in real-time
+using sockets. It serves as a practical example of handling complex tasks within a Dockerized environment and streaming
+their output, rather than focusing solely on APK decompilation. The tech stack was selected to explore and learn Docker
+and Flask.
