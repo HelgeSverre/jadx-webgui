@@ -9,7 +9,7 @@ RUN rm -rf node_modules dist .env
 
 RUN yarn install
 
-RUN yarn  build
+RUN yarn build
 
 FROM node:${NODE_VERSION}-alpine AS production
 RUN yarn global add serve
